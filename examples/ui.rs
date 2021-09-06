@@ -4,15 +4,15 @@ use bevy_egui::{egui, EguiContext, EguiPlugin, EguiSettings};
 const BEVY_TEXTURE_ID: u64 = 0;
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
         .insert_resource(Msaa { samples: 4 })
         .init_resource::<UiState>()
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
-        .add_startup_system(load_assets.system())
-        .add_system(update_ui_scale_factor.system())
-        .add_system(ui_example.system())
+        .add_startup_system(load_assets)
+        .add_system(update_ui_scale_factor)
+        .add_system(ui_example)
         .run();
 }
 

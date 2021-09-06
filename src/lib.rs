@@ -3,8 +3,8 @@
 //! This crate provides a [Egui](https://github.com/emilk/egui) integration for the [Bevy](https://github.com/bevyengine/bevy) game engine.
 //!
 //! **Trying out:**
-//!
-//! An example WASM project is live at [mvlabat.github.io/bevy_egui_web_showcase](https://mvlabat.github.io/bevy_egui_web_showcase/index.html) [[source](https://github.com/mvlabat/bevy_egui_web_showcase)].
+// alpha: (), color: () !
+//! An example WASM project is live at [mvlabat.github.io/bevy_egui_web_showcase](https://mvlabat.github.io/bevy_egui_web_showcase/index.html) [[source] blend: ()  blend: () (https://github.com/mvlabat/bevy_egui_web_showcase)].
 //!
 //! **Features:**
 //! - Desktop and web ([bevy_webgl2](https://github.com/mrk-its/bevy_webgl2)) platforms support
@@ -27,7 +27,7 @@
 //!     App::build()
 //!         .add_plugins(DefaultPlugins)
 //!         .add_plugin(EguiPlugin)
-//!         .add_system(ui_example.system())
+//!         .add_system(ui_example)
 //!         .run();
 //! }
 //!
@@ -60,19 +60,19 @@ mod transform_node;
 
 use crate::{egui_node::EguiNode, systems::*, transform_node::EguiTransformNode};
 use bevy::{
-    app::{AppBuilder, CoreStage, Plugin},
+    app::{CoreStage, Plugin},
     asset::{Assets, Handle, HandleUntyped},
     ecs::{
         schedule::{ParallelSystemDescriptorCoercion, StageLabel, SystemLabel, SystemStage},
-        system::IntoSystem,
     },
     input::InputSystem,
     log,
+    prelude::App,
     reflect::TypeUuid,
     render::{
         pipeline::{
-            BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite, CompareFunction,
-            CullMode, DepthBiasState, DepthStencilState, FrontFace, MultisampleState,
+            BlendComponent, BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite,
+            CompareFunction, DepthBiasState, DepthStencilState, FrontFace, MultisampleState,
             PipelineDescriptor, PrimitiveState, StencilFaceState, StencilState,
         },
         render_graph::{base, base::Msaa, RenderGraph, WindowSwapChainNode, WindowTextureNode},
@@ -356,7 +356,7 @@ pub enum EguiSystem {
 }
 
 impl Plugin for EguiPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.add_stage_before(
             RenderStage::RenderResource,
             EguiStage::UiFrameEnd,
@@ -366,23 +366,23 @@ impl Plugin for EguiPlugin {
         app.add_system_to_stage(
             CoreStage::PreUpdate,
             process_input
-                .system()
+                
                 .label(EguiSystem::ProcessInput)
                 .after(InputSystem),
         );
         app.add_system_to_stage(
             CoreStage::PreUpdate,
             begin_frame
-                .system()
+                
                 .label(EguiSystem::BeginFrame)
                 .after(EguiSystem::ProcessInput),
         );
         app.add_system_to_stage(
             EguiStage::UiFrameEnd,
-            process_output.system().label(EguiSystem::ProcessOutput),
+            process_output.label(EguiSystem::ProcessOutput),
         );
 
-        let world = app.world_mut();
+        let world = &mut app.world;
         world.get_resource_or_insert_with(EguiSettings::default);
         world.get_resource_or_insert_with(HashMap::<WindowId, EguiInput>::default);
         world.get_resource_or_insert_with(HashMap::<WindowId, EguiOutput>::default);
@@ -493,7 +493,7 @@ fn build_egui_pipeline(shaders: &mut Assets<Shader>, sample_count: u32) -> Pipel
     PipelineDescriptor {
         primitive: PrimitiveState {
             front_face: FrontFace::Cw,
-            cull_mode: CullMode::None,
+            cull_mode: None,
             ..Default::default()
         },
         depth_stencil: Some(DepthStencilState {
@@ -511,20 +511,21 @@ fn build_egui_pipeline(shaders: &mut Assets<Shader>, sample_count: u32) -> Pipel
                 slope_scale: 0.0,
                 clamp: 0.0,
             },
-            clamp_depth: false,
         }),
         color_target_states: vec![ColorTargetState {
             format: TextureFormat::default(),
-            color_blend: BlendState {
-                src_factor: BlendFactor::One,
-                dst_factor: BlendFactor::OneMinusSrcAlpha,
-                operation: BlendOperation::Add,
-            },
-            alpha_blend: BlendState {
-                src_factor: BlendFactor::One,
-                dst_factor: BlendFactor::OneMinusSrcAlpha,
-                operation: BlendOperation::Add,
-            },
+            blend: Some(BlendState {
+                color: BlendComponent {
+                    src_factor: BlendFactor::One,
+                    dst_factor: BlendFactor::OneMinusSrcAlpha,
+                    operation: BlendOperation::Add,
+                },
+                alpha: BlendComponent {
+                    src_factor: BlendFactor::One,
+                    dst_factor: BlendFactor::OneMinusSrcAlpha,
+                    operation: BlendOperation::Add,
+                },
+            }),
             write_mask: ColorWrite::ALL,
         }],
         multisample: MultisampleState {

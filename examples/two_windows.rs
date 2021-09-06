@@ -17,19 +17,19 @@ const BEVY_TEXTURE_ID: u64 = 0;
 
 /// This example creates a second window and draws a mesh from two different cameras.
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(Msaa { samples: 4 })
         .init_resource::<SharedUiState>()
         .add_state(AppState::CreateWindow)
         .add_plugins(DefaultPlugins)
         .add_plugin(EguiPlugin)
-        .add_startup_system(load_assets.system())
+        .add_startup_system(load_assets)
         .add_system_set(
-            SystemSet::on_update(AppState::CreateWindow).with_system(setup_window.system()),
+            SystemSet::on_update(AppState::CreateWindow).with_system(setup_window),
         )
-        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup.system()))
-        .add_system_set(SystemSet::on_update(AppState::Done).with_system(ui_second_window.system()))
-        .add_system(ui_first_window.system())
+        .add_system_set(SystemSet::on_update(AppState::Setup).with_system(setup))
+        .add_system_set(SystemSet::on_update(AppState::Done).with_system(ui_second_window))
+        .add_system(ui_first_window)
         .run();
 }
 
@@ -117,7 +117,7 @@ fn setup_pipeline(
 
     // add a new render pass for our new window / camera
     let mut second_window_pass = PassNode::<&MainPass>::new(PassDescriptor {
-        color_attachments: vec![msaa.color_attachment_descriptor(
+        color_attachments: vec![msaa.color_attachment(
             TextureAttachment::Input("color_attachment".to_string()),
             TextureAttachment::Input("color_resolve_target".to_string()),
             Operations {
@@ -125,7 +125,7 @@ fn setup_pipeline(
                 store: true,
             },
         )],
-        depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
+        depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
             attachment: TextureAttachment::Input("depth".to_string()),
             depth_ops: Some(Operations {
                 load: LoadOp::Clear(1.0),
@@ -174,9 +174,9 @@ fn setup_pipeline(
                 window_id,
                 TextureDescriptor {
                     size: Extent3d {
-                        depth: 1,
                         width: 1,
                         height: 1,
+                        depth_or_array_layers: 1,
                     },
                     mip_level_count: 1,
                     sample_count: msaa.samples,
@@ -241,7 +241,7 @@ fn setup(
         ..Default::default()
     });
     // light
-    commands.spawn_bundle(LightBundle {
+    commands.spawn_bundle(PointLightBundle {
         transform: Transform::from_xyz(4.0, 5.0, 4.0),
         ..Default::default()
     });
